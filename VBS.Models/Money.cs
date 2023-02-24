@@ -10,5 +10,11 @@ namespace VBS.Models
     {
         public Currency Currency { get; set; }
         public int Value { get; set; }
+
+        public Money(Currency currency, int value)
+        {
+            Currency = currency;
+            Value = value;
+        }
     }
 }

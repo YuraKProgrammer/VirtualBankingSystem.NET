@@ -13,6 +13,12 @@ namespace VBS.Models
         public DateTime LastDate { get; set; }
         public Money Money { get; set; }
             
-
+        public BankCard(int id, string ownersName, DateTime lastDate, Currency currency)
+        {
+            Id = id;
+            OwnersName = ownersName;
+            LastDate = lastDate;
+            Money = new Money(currency, 0);
+        }
     }
 }
