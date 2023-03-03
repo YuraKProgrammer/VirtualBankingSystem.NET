@@ -11,7 +11,7 @@ namespace VBS.Models
         public DateTime NowTime;
         private const int superCode = 123;
         private const int cancellationCode = 1;
-        private List<BankCard> bankCards;
+        private List<BankCard> bankCards = new List<BankCard>();
 
         public string MakeAMoneyTransfer(int id1, int id2, int summ)
         {
@@ -20,7 +20,7 @@ namespace VBS.Models
             var c2 = bankCards.Where(bc => bc.Id == id2).FirstOrDefault();
             if (BankChecker.CheckBank(this))
             {
-                if (CheckCard(c1) && CheckCard(c2) && c1.Money.Currency == c2.Money.Currency && c1.Money.Value > summ)
+                if (CheckCard(c1) && CheckCard(c2) && c1.Money.Currency == c2.Money.Currency && c1.Money.Value >= summ)
                 {
                     c1.Money.Value = c1.Money.Value - summ;
                     c2.Money.Value = c2.Money.Value + summ;
@@ -39,7 +39,7 @@ namespace VBS.Models
             var summ = payment.GetSumm();
             if (BankChecker.CheckBank(this))
             {
-                if (CheckCard(c1) && CheckCard(c2) && c1.Money.Currency == c2.Money.Currency && c1.Money.Value > summ)
+                if (CheckCard(c1) && CheckCard(c2) && c1.Money.Currency == c2.Money.Currency && c1.Money.Value >= summ)
                 {
                     c1.Money.Value = c1.Money.Value - summ;
                     c2.Money.Value = c2.Money.Value + summ;
@@ -65,6 +65,22 @@ namespace VBS.Models
             }
         }
 
+        public bool CheckCorrectnessOfDomesticPayment(int id1, Payment payment, string token)
+        {
+            if (BankChecker.GetSuperCode1(id1, payment.GetRecipientId(), payment.GetSumm(), token) == superCode)
+            {
+                return true;
+            }
+            else if (BankChecker.GetSuperCode1(id1, payment.GetRecipientId(), payment.GetSumm(), token) == cancellationCode)
+            {
+                return false;
+            }
+            else
+            {
+                throw new Exception("ВНИМЕНИЕ! ПОДДЕЛЬНЫЙ ТОКЕН!");
+            }
+        }
+
         public int GetCountOfMoney(int id)
         {
             var c = bankCards.Where(bc => bc.Id == id).FirstOrDefault();
@@ -73,7 +89,7 @@ namespace VBS.Models
 
         public bool CheckCard(BankCard bankCard)
         {
-            if (bankCard!=null && bankCard.LastDate < DateTime.Now)
+            if (bankCard!=null && bankCard.LastDate > DateTime.Now)
             {
                 return true;
             }
@@ -88,5 +104,17 @@ namespace VBS.Models
             bankCards.Add(bc);
             return id;
         } 
+
+        public int KnowBalance(int id)
+        {
+            var c = bankCards.Where(bc => bc.Id == id).FirstOrDefault();
+            return c.Money.Value;
+        }
+
+        public void EmptyEnrollment(int id, int value)
+        {
+            var c = bankCards.Where(bc => bc.Id == id).FirstOrDefault();
+            c.Money.Value+=value;
+        }
     }
 }
