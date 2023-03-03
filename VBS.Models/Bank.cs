@@ -11,7 +11,7 @@ namespace VBS.Models
         public DateTime NowTime;
         private const int superCode = 123;
         private const int cancellationCode = 1;
-        public List<BankCard> bankCards;
+        private List<BankCard> bankCards;
 
         public string MakeAMoneyTransfer(int id1, int id2, int summ)
         {
@@ -24,11 +24,46 @@ namespace VBS.Models
                 {
                     c1.Money.Value = c1.Money.Value - summ;
                     c2.Money.Value = c2.Money.Value + summ;
-                    return BankChecker.GetToken(id1,id2,summ,superCode);
+                    return BankChecker.GetToken1(id1,id2,summ,superCode);
                 }
             }
-            return BankChecker.GetToken(id1, id2, summ, cancellationCode);
+            return BankChecker.GetToken1(id1, id2, summ, cancellationCode);
         } 
+
+        public string MakeDomesticPayment(int id, Payment payment)
+        {
+            NowTime = DateTime.UtcNow;
+            var id2 = payment.GetRecipientId();
+            var c1 = bankCards.Where(bc => bc.Id == id).FirstOrDefault();
+            var c2 = bankCards.Where(bc => bc.Id == id2).FirstOrDefault();
+            var summ = payment.GetSumm();
+            if (BankChecker.CheckBank(this))
+            {
+                if (CheckCard(c1) && CheckCard(c2) && c1.Money.Currency == c2.Money.Currency && c1.Money.Value > summ)
+                {
+                    c1.Money.Value = c1.Money.Value - summ;
+                    c2.Money.Value = c2.Money.Value + summ;
+                    return BankChecker.GetToken1(id, id2, summ, superCode);
+                }
+            }
+            return BankChecker.GetToken1(id, id2, summ, cancellationCode);
+        }
+
+        public bool CheckCorrectnessOfTransfer(int id1, int id2, int summ, string token)
+        {
+            if (BankChecker.GetSuperCode1(id1, id2, summ, token)==superCode)
+            {
+                return true;
+            }
+            else if (BankChecker.GetSuperCode1(id1, id2, summ, token)==cancellationCode) 
+            {
+                return false;
+            }
+            else
+            {
+                throw new Exception("ВНИМЕНИЕ! ПОДДЕЛЬНЫЙ ТОКЕН!");
+            }
+        }
 
         public int GetCountOfMoney(int id)
         {
@@ -44,5 +79,14 @@ namespace VBS.Models
             }
             return false;
         }
+
+        public int CreateCard(string ownersName,Currency currency)
+        {
+            var id = bankCards.Count + 1;
+            var ld = DateTime.UtcNow.AddDays(1826);
+            var bc = new BankCard(id, ownersName, ld, currency); 
+            bankCards.Add(bc);
+            return id;
+        } 
     }
 }
